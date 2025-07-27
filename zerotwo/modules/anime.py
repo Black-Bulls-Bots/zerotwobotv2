@@ -36,10 +36,14 @@ async def anime_handler(update: Update, context: CallbackContext):
     query = update.callback_query
     anime_id = query.data.split("_")[1]
 
+    if query.from_user.id != message.reply_to_message.from_user.id:
+        await query.answer("You aren't supposed to do this, ask me on your own")
+        return
+
     async with AsyncClient() as client:
         r = await client.get(url=f'{api_url}anime/{anime_id}')
         if r.status_code in [400, 404, 405, 429, 500, 503]:
-            await message.reply_text("Couldn't find this one, could be internal issue or no found.")
+            await query.answer("Couldn't find this one, could be internal issue or no found.")
             return
 
         response = r.json()['data']
@@ -81,20 +85,23 @@ async def anime_handler(update: Update, context: CallbackContext):
         await message.reply_photo(
             photo=image_url,
             caption=f"""
-<b>Title:</b> {title}
-<b>Year:</b> {year}
-<b>Rating:</b> {rating}
-<b>Episodes:</b> {episodes}
-<b>Status:</b> {status}
-<b>Score:</b> {score}
-<b>Airing:</b> {airing}
-<b>Duration:</b> {duration}
-<b>Rank:</b> {rank}
-<b>Description:</b> {description}
-""",
+    <b>Title:</b> {title}
+    <b>Year:</b> {year}
+    <b>Rating:</b> {rating}
+    <b>Episodes:</b> {episodes}
+    <b>Status:</b> {status}
+    <b>Score:</b> {score}
+    <b>Airing:</b> {airing}
+    <b>Duration:</b> {duration}
+    <b>Rank:</b> {rank}
+    <b>Description:</b> {description}
+    """,
             reply_markup=InlineKeyboardMarkup(buttons) if buttons else None,
             parse_mode='HTML'
         )
+
+        await query.answer()
+        await query.delete_message()
 
 application.add_handler(CommandHandler('anime', anime))
 application.add_handler(CallbackQueryHandler(callback=anime_handler, pattern=r"^anime_\d+$"))
