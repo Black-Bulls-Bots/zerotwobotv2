@@ -1,6 +1,6 @@
 from zerotwo import application
 from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import CommandHandler, ContextTypes
 from zerotwo.modules import ALL_MODULES
 import importlib
 
