@@ -8,15 +8,18 @@ __version__ = "1.0-alpha"
 
 import logging
 import os
+import time
 import platform
-import random
 from telegram import __bot_api_version__
 from telegram import __version__ as ptb_version
-from telegram.ext import ApplicationBuilder, Application
+from telegram.ext import Application
+import random
 from telegram.error import BadRequest, Forbidden
 
 from dotenv import load_dotenv
 
+
+StartTime = time.time()
 
 #load .env file
 load_dotenv()
@@ -51,13 +54,19 @@ EVENT_LOGS = os.environ.get("EVENT_LOGS", None)
 SUPPORT_CHAT = os.environ.get("SUPPORT_CHAT", "")
 "Support chat ID, where bot would say hi and hello."
 
-DB_URI = os.environ.get("DATABASE_URL", None)
+DB_URI = os.environ.get("DB_URI", None)
 "Database URL of postgresql"
 
 LOAD = os.environ.get("LOAD", "").split()
 "Modules to load, separated by space"
 NO_LOAD = os.environ.get("NO_LOAD", "").split()
 "Modules to not load, sepaated by space"
+ALLOW_EXCL = os.environ.get("ALLOW_EXCL", False)
+WEBHOOK = bool(os.environ.get("WEBHOOK", False))
+URL = os.environ.get("URL", "")  # Does not contain token
+PORT = int(os.environ.get("PORT", 5000))
+CERT_PATH = os.environ.get("CERT_PATH")
+
 
 ALIVE_TEXT = [
     "I'm not alone. I'm with you, Darling.",
@@ -113,7 +122,6 @@ ALIVE_TEXT = [
 ]
 "Some of the great words said by zero two, bot will be sending this once n hour in support chat"
 
-
 #enable logging
 logging.basicConfig(
     format= "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -123,20 +131,5 @@ logging.basicConfig(
 
 LOGGER = logging.getLogger(__name__)
 
-async def post_init(application: Application):
 
-    try:
-        await application.bot.sendMessage(-4923520227, random.choice(ALIVE_TEXT))
-
-    except Forbidden:
-        LOGGER.warning(
-            "Bot isn't able to send message to support_chat, go and check!",
-        )
-
-
-    except BadRequest as e:
-        LOGGER.warning(e.message)
-
-application = ApplicationBuilder().token(TOKEN).post_init(post_init).build()
-
-
+application = Application.builder().token(TOKEN).concurrent_updates(True).build()
