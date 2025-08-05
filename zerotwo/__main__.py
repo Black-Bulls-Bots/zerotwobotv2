@@ -385,7 +385,7 @@ async def error_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def post_init(application: Application):
 
     try:
-        await application.bot.sendMessage(-4923520227, random.choice(ALIVE_TEXT))
+        await application.bot.sendMessage(-1002720800208, random.choice(ALIVE_TEXT))
 
     except Forbidden:
         raise(
