@@ -7,7 +7,7 @@ from telegram.error import BadRequest, Forbidden
 from telegram.ext import CallbackQueryHandler, CommandHandler, ContextTypes
 
 import zerotwo.sql.connection as sql
-from zerotwo import OWNER_ID, application
+from zerotwo import LOGGER, OWNER_ID, application
 from zerotwo.helpers.chat_status import check_admin
 from zerotwo.helpers.alternate import send_message, typing_action
 
@@ -23,13 +23,13 @@ async def allow_connections(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         if len(args) >= 1:
             var = args[0]
             if var == "no":
-                sql.set_allow_connect_to_chat(chat.id, False)
+                await sql.set_allow_connect_to_chat(chat.id, False)
                 await send_message(
                     update.effective_message,
                     "Connection has been disabled for this chat",
                 )
             elif var == "yes":
-                sql.set_allow_connect_to_chat(chat.id, True)
+                await sql.set_allow_connect_to_chat(chat.id, True)
                 await send_message(
                     update.effective_message,
                     "Connection has been enabled for this chat",
@@ -41,7 +41,7 @@ async def allow_connections(update: Update, context: ContextTypes.DEFAULT_TYPE) 
                     parse_mode=ParseMode.MARKDOWN,
                 )
         else:
-            get_settings = sql.allow_connect_to_chat(chat.id)
+            get_settings = await sql.allow_connect_to_chat(chat.id)
             if get_settings:
                 await send_message(
                     update.effective_message,
@@ -118,10 +118,10 @@ async def connect_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             isadmin = getstatusadmin.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
             ismember = getstatusadmin.status == ChatMemberStatus.MEMBER
-            isallow = sql.allow_connect_to_chat(connect_chat)
-
+            isallow = await sql.allow_connect_to_chat(connect_chat)
+            
             if (isadmin) or (isallow and ismember) or (user.id == OWNER_ID):
-                connection_status = sql.connect(
+                connection_status = await sql.connect(
                     update.effective_message.from_user.id,
                     connect_chat,
                 )
@@ -138,7 +138,7 @@ async def connect_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
                         ),
                         parse_mode=ParseMode.MARKDOWN,
                     )
-                    sql.add_history_conn(user.id, str(conn_chat.id), chat_name)
+                    await sql.add_history_conn(user.id, str(conn_chat.id), chat_name)
                 else:
                     await send_message(update.effective_message, "Connection failed!")
             else:
@@ -147,7 +147,7 @@ async def connect_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     "Connection to this chat is not allowed!",
                 )
         else:
-            gethistory = sql.get_history_conn(user.id)
+            gethistory = await sql.get_history_conn(user.id)
             if gethistory:
                 buttons = [
                     InlineKeyboardButton(
@@ -163,7 +163,7 @@ async def connect_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 buttons = []
             conn = await connected(context.bot, update, chat, user.id, need_admin=False)
             if conn:
-                connectedchat = await application.bot.getChat(conn)
+                connectedchat = await application.bot.getChat(conn.chat_id)
                 text = "You are currently connected to *{}* (`{}`)".format(
                     connectedchat.title,
                     conn,
@@ -224,9 +224,9 @@ async def connect_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         isadmin = getstatusadmin.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
         ismember = getstatusadmin.status == ChatMemberStatus.MEMBER
-        isallow = sql.allow_connect_to_chat(chat.id)
+        isallow = await sql.allow_connect_to_chat(chat.id)
         if (isadmin) or (isallow and ismember) or (user.id == OWNER_ID):
-            connection_status = sql.connect(
+            connection_status = await sql.connect(
                 update.effective_message.from_user.id,
                 chat.id,
             )
@@ -239,7 +239,7 @@ async def connect_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode=ParseMode.MARKDOWN,
                 )
                 try:
-                    sql.add_history_conn(user.id, str(chat.id), chat_name)
+                    await sql.add_history_conn(user.id, str(chat.id), chat_name)
                     await context.bot.send_message(
                         update.effective_message.from_user.id,
                         "You are connected to *{}*. \nUse `/helpconnect` to check available commands.".format(
@@ -263,9 +263,9 @@ async def connect_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def disconnect_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     if update.effective_chat.type == ChatType.PRIVATE:
-        disconnection_status = sql.disconnect(update.effective_message.from_user.id)
+        disconnection_status = await sql.disconnect(update.effective_message.from_user.id)
         if disconnection_status:
-            sql.disconnected_chat = await send_message(
+            await send_message(
                 update.effective_message,
                 "Disconnected from chat!",
             )
@@ -280,16 +280,16 @@ async def disconnect_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def connected(bot: Bot, update: Update, chat, user_id, need_admin=True):
     user = update.effective_user
 
-    if chat.type == ChatType.PRIVATE and sql.get_connected_chat(user_id):
+    if chat.type == ChatType.PRIVATE and await sql.get_connected_chat(user_id):
 
-        conn_id = sql.get_connected_chat(user_id).chat_id
+        conn_id = await sql.get_connected_chat(user_id)
         getstatusadmin = await bot.get_chat_member(
-            conn_id,
+            conn_id.chat_id,
             update.effective_message.from_user.id,
         )
         isadmin = getstatusadmin.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
         ismember = getstatusadmin.status == ChatMemberStatus.MEMBER
-        isallow = sql.allow_connect_to_chat(conn_id)
+        isallow = await sql.allow_connect_to_chat(conn_id)
 
         if (
             (isadmin)
@@ -360,10 +360,10 @@ async def connect_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         isadmin = getstatusadmin.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
         ismember = getstatusadmin.status == ChatMemberStatus.MEMBER
-        isallow = sql.allow_connect_to_chat(target_chat)
+        isallow = await sql.allow_connect_to_chat(target_chat)
 
         if (isadmin) or (isallow and ismember) or (user.id == OWNER_ID):
-            connection_status = sql.connect(query.from_user.id, target_chat)
+            connection_status = await sql.connect(query.from_user.id, target_chat)
 
             if connection_status:
                 conn = await connected(
@@ -377,7 +377,7 @@ async def connect_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     ),
                     parse_mode=ParseMode.MARKDOWN,
                 )
-                sql.add_history_conn(user.id, str(conn_chat.id), chat_name)
+                await sql.add_history_conn(user.id, str(conn_chat.id), chat_name)
             else:
                 await query.message.edit_text("Connection failed!")
         else:
@@ -387,9 +387,9 @@ async def connect_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 show_alert=True,
             )
     elif disconnect_match:
-        disconnection_status = sql.disconnect(query.from_user.id)
+        disconnection_status = await sql.disconnect(query.from_user.id)
         if disconnection_status:
-            sql.disconnected_chat = await query.message.edit_text(
+            await query.message.edit_text(
                 "Disconnected from chat!"
             )
         else:
@@ -399,7 +399,7 @@ async def connect_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 show_alert=True,
             )
     elif clear_match:
-        sql.clear_history_conn(query.from_user.id)
+        await sql.clear_history_conn(query.from_user.id)
         await query.message.edit_text("History connected has been cleared!")
     elif connect_close:
         await query.message.edit_text("Closed.\nTo open again, type /connect")
