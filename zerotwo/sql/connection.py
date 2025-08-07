@@ -26,7 +26,7 @@ class Connection(Base):
     user_id = Column(BigInteger, primary_key=True)
     chat_id = Column(String(14))
 
-    def __init__(self, user_id: int, chat_id: Union[str, int]):
+    def __init__(self, user_id: int, chat_id: Union[str]):
         self.user_id = int(user_id)
         self.chat_id = str(chat_id)
 
@@ -63,12 +63,14 @@ HISTORY_CONNECT: dict[int, dict[int, dict[str, str]]] = {}
 # CRUD Functions
 # ---------------------------
 async def allow_connect_to_chat(chat_id: Union[str, int]) -> bool:
+    """Allow whether connection to this chat can be turned on or off"""
     async with async_session() as session:
         setting = await session.get(ChatAccessConnectionSettings, str(chat_id))
         return bool(setting and setting.allow_connect_to_chat)
 
 
 async def set_allow_connect_to_chat(chat_id: Union[int, str], setting: bool):
+    
     async with CHAT_ACCESS_LOCK:
         async with async_session() as session:
             chat_setting = await session.get(ChatAccessConnectionSettings, str(chat_id))
@@ -94,11 +96,6 @@ async def connect(user_id: int, chat_id: Union[int, str]) -> bool:
 async def get_connected_chat(user_id: int) -> Optional[Connection]:
     async with async_session() as session:
         return await session.get(Connection, int(user_id))
-
-
-async def curr_connection(chat_id: Union[int, str]) -> Optional[Connection]:
-    async with async_session() as session:
-        return await session.get(Connection, str(chat_id))
 
 
 async def disconnect(user_id: int) -> bool:
