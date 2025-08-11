@@ -35,10 +35,10 @@ async def anime_handler(update: Update, context: CallbackContext):
     message = update.effective_message
     query = update.callback_query
     anime_id = query.data.split("_")[1]
-
-    if query.from_user.id != message.reply_to_message.from_user.id:
-        await query.answer("You aren't supposed to do this, ask me on your own")
-        return
+    if not update.effective_chat.PRIVATE:
+        if query.from_user.id != message.reply_to_message.from_user.id:
+            await query.answer("You aren't supposed to do this, ask me on your own")
+            return
 
     async with AsyncClient() as client:
         r = await client.get(url=f'{api_url}anime/{anime_id}')
@@ -85,16 +85,16 @@ async def anime_handler(update: Update, context: CallbackContext):
         await message.reply_photo(
             photo=image_url,
             caption=f"""
-    <b>Title:</b> {title}
-    <b>Year:</b> {year}
-    <b>Rating:</b> {rating}
-    <b>Episodes:</b> {episodes}
-    <b>Status:</b> {status}
-    <b>Score:</b> {score}
-    <b>Airing:</b> {airing}
-    <b>Duration:</b> {duration}
-    <b>Rank:</b> {rank}
-    <b>Description:</b> {description}
+<b>Title:</b> <code>{title}</code>
+<b>Year:</b> <code>{year}</code>
+<b>Rating:</b> <code>{rating}</code>
+<b>Episodes:</b> <code>{episodes}</code>
+<b>Status:</b> <code>{status}</code>
+<b>Score:</b> <code>{score}</code>
+<b>Airing:</b> <code>{airing}</code>
+<b>Duration:</b> <code>{duration}</code>
+<b>Rank:</b> <code>{rank}</code>
+<b>Description:</b> {description}
     """,
             reply_markup=InlineKeyboardMarkup(buttons) if buttons else None,
             parse_mode='HTML'
@@ -102,6 +102,16 @@ async def anime_handler(update: Update, context: CallbackContext):
 
         await query.answer()
         await query.delete_message()
+
+__mod_name__ = "Anime"
+__help__ = """
+Search your favorite anime faster than any other bot.
+
+*It's just simple:*
+ • /anime <query>
+ • Select the anime from the buttons
+
+"""
 
 application.add_handler(CommandHandler('anime', anime))
 application.add_handler(CallbackQueryHandler(callback=anime_handler, pattern=r"^anime_\d+$"))
