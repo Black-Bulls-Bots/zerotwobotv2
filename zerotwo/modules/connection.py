@@ -289,7 +289,7 @@ async def connected(bot: Bot, update: Update, chat, user_id, need_admin=True):
         )
         isadmin = getstatusadmin.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
         ismember = getstatusadmin.status == ChatMemberStatus.MEMBER
-        isallow = await sql.allow_connect_to_chat(conn_id)
+        isallow = await sql.allow_connect_to_chat(conn_id.chat_id)
 
         if (
             (isadmin)
@@ -301,14 +301,14 @@ async def connected(bot: Bot, update: Update, chat, user_id, need_admin=True):
                     getstatusadmin.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
                     or user.id == OWNER_ID
                 ):
-                    return conn_id
+                    return conn_id.chat_id
                 else:
                     await send_message(
                         update.effective_message,
                         "You must be an admin in the connected group!",
                     )
             else:
-                return conn_id
+                return conn_id.chat_id
         else:
             await send_message(
                 update.effective_message,
