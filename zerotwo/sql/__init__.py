@@ -1,10 +1,20 @@
 import asyncio
 import importlib
 import pkgutil
+from collections import defaultdict
 from pathlib import Path
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession, AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase
 from zerotwo import DB_URI
+
+class CustomLockManager():
+    """Custom lock manager per user id, so db methods hold others"""
+    def __init__(self):
+        self._lock = defaultdict(asyncio.Lock)
+
+    def key(self, key):
+        """returns lock object for specific user, so others can write freely"""
+        return self._lock[key]
 
 class Base(AsyncAttrs, DeclarativeBase):
     pass
