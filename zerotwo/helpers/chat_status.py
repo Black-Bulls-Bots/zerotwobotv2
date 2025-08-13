@@ -32,8 +32,6 @@ def check_admin(
         is_user (bool, optional): if user can perform the action. Defaults to False.
         is_both (bool, optional): if both user and bot can perform the action. Defaults to False.
         only_owner (bool, optional): if only owner can perform the action. Defaults to False.
-        only_sudo (bool, optional): if only sudo users can perform the operation. Defaults to False.
-        only_dev (bool, optional): if only dev users can perform the operation. Defaults to False.
         no_reply (boot, optional): if should not reply. Defaults to False.
     """
 
