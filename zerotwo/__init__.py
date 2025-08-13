@@ -13,8 +13,7 @@ import platform
 from telegram import __bot_api_version__
 from telegram import __version__ as ptb_version
 from telegram.ext import Application
-import random
-from telegram.error import BadRequest, Forbidden
+import telegram.ext as tg
 
 from dotenv import load_dotenv
 
@@ -133,3 +132,14 @@ LOGGER = logging.getLogger(__name__)
 
 
 application = Application.builder().token(TOKEN).concurrent_updates(True).build()
+
+
+# Load at end to ensure all prev variables have been set
+from zerotwo.helpers.handlers import (
+    CustomCommandHandler,
+    CustomMessageHandler,
+)
+
+# make sure the regex handler can take extra kwargs
+tg.CommandHandler = CustomCommandHandler
+tg.MessageHandler = CustomMessageHandler
