@@ -3,7 +3,7 @@ A python based telegram bot to manage group with anime theme
 """
 
 __author__ = "Joker Hacker"
-__version__ = "1.1-alpha"
+__version__ = "1.2-alpha"
 
 
 import logging
