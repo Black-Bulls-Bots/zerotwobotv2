@@ -190,3 +190,7 @@ def convert_gif(input: str):
     )
 
     return converted_name
+
+
+def is_module_loaded(name):
+    return name not in NO_LOAD
