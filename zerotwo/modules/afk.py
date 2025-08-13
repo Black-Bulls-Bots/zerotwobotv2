@@ -18,49 +18,35 @@ AFK_GROUP = 7
 AFK_REPLY_GROUP = 8
 
 
-
 async def afk(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_message.text:
-        args = update.effective_message.text.split(None, 1)
-    else:
-        return
     user = update.effective_user
-
-    if not user:  # ignore channels
+    if not user or not update.effective_message.text:
         return
 
-
+    args = update.effective_message.text.split(None, 1)
+    reason = args[1] if len(args) > 1 else ""
     notice = ""
-    if len(args) >= 2:
-        reason = args[1]
-        if len(reason) > 100:
-            reason = reason[:100]
-            notice = "\nYour afk reason was shortened to 100 characters."
-    else:
-        reason = ""
 
-    await sql.toggle_afk(update.effective_user.id, reason, True)
-    fname = update.effective_user.first_name
+    if len(reason) > 100:
+        reason = reason[:100]
+        notice = "\nYour AFK reason was shortened to 100 characters."
+
+    await sql.set_afk(user.id, reason)
+
+    fname = user.first_name or "there"
+    msg_text = f"{fname} is now away! \nReason: <code>{reason}</code> \n{notice}" if reason else f"{fname} is now away!{notice}"
+
     try:
-        if reason:
-            await update.effective_message.reply_text(
-                f"{fname} is now away! \nReason: <code>{reason}</code> \n {notice}",
-                parse_mode="html"
-            )
-        else:
-                await update.effective_message.reply_text(
-                "{} is now away!{}".format(fname, notice),
-            )   
+        await update.effective_message.reply_text(msg_text, parse_mode="html")
     except BadRequest:
-        pass
-
+        return
 
 
 async def no_longer_afk(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     message = update.effective_message
 
-    if not user:  # ignore channels
+    if not user:
         return
 
     afk_user = await sql.check_afk_status(user.id)
@@ -69,12 +55,8 @@ async def no_longer_afk(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     afk_duration = humanize.naturaldelta(datetime.now() - afk_user.time)
 
-    # Turn off AFK
-    toggled = await sql.toggle_afk(user.id)
-    if not toggled:
-        return
+    await sql.rm_afk(user.id)
 
-    # Skip new chat members
     if message.new_chat_members:
         return
 
@@ -91,7 +73,7 @@ async def no_longer_afk(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "{} is back in action!",
         "{} has rejoined the chaos!",
         "{} is back, better than ever!",
-        "{} sneaked back into the chat!",   
+        "{} sneaked back into the chat!",
         "{} has returned… did you miss them?",
         "{} wandered off but found their way back!",
         "{} is back to steal the spotlight!",
@@ -106,8 +88,6 @@ async def no_longer_afk(update: Update, context: ContextTypes.DEFAULT_TYPE):
         f"{chosen_message}\nYou were AFK for: <code>{afk_duration}</code>",
         parse_mode="html"
     )
-
-
 
 
 async def reply_afk(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -160,9 +140,8 @@ async def reply_afk(update: Update, context: ContextTypes.DEFAULT_TYPE):
         fst_name = message.reply_to_message.from_user.first_name
         await check_afk(update, context, user_id, fst_name, userc_id)
 
-
 async def check_afk(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, fst_name: str, userc_id: int):
-    if await sql.is_afk(user_id):
+    if sql.is_afk(user_id):
         user = await sql.check_afk_status(user_id)
 
         if int(userc_id) == int(user_id):
@@ -184,17 +163,11 @@ async def check_afk(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id:
             )
             await update.effective_message.reply_text(res, parse_mode="html")
 
-
-__help__ = """
- • `/afk <reason>`*:* mark yourself as AFK (away from keyboard).
- • `brb <reason>`*:* same as the afk command - but not a command.
-When marked as AFK, any mentions will be replied to with a message to say you're not available!
-"""
-
+# ---------------------------
+# Handlers
+# ---------------------------
 AFK_HANDLER = DisableAbleCommandHandler("afk", afk, block=False)
-AFK_REGEX_HANDLER = DisableAbleMessageHandler(
-    filters.Regex(r"(?i)^brb(.*)$"), afk, friendly="afk", block=False
-)
+AFK_REGEX_HANDLER = DisableAbleMessageHandler(filters.Regex(r"(?i)^brb(.*)$"), afk, friendly="afk", block=False)
 NO_AFK_HANDLER = MessageHandler(filters.ALL & filters.ChatType.GROUPS, no_longer_afk, block=False)
 AFK_REPLY_HANDLER = MessageHandler(filters.ALL & filters.ChatType.GROUPS, reply_afk, block=False)
 
