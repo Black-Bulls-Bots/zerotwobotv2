@@ -141,7 +141,7 @@ async def reply_afk(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await check_afk(update, context, user_id, fst_name, userc_id)
 
 async def check_afk(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int, fst_name: str, userc_id: int):
-    if sql.is_afk(user_id):
+    if await sql.is_afk(user_id):
         user = await sql.check_afk_status(user_id)
 
         if int(userc_id) == int(user_id):
