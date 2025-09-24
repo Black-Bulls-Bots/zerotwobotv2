@@ -153,7 +153,7 @@ async def kang(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await kang_file.download_to_drive(f"kangsticker_{user.id}.webm")
         elif is_gif:
             await kang_file.download_to_drive(f"kang_{user.id}.mp4")
-            convert_gif(f"kang_{user.id}.mp4")
+            convert_gif(f"kang_{user.id}.mp4", user.id)
 
         if args:
             sticker_emoji = str(args[0])

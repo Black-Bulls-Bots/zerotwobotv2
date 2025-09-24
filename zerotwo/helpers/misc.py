@@ -152,7 +152,7 @@ def mention_username(username: str, name: str) -> str:
     return f'<a href="t.me/{username}">{escape(name)}</a>'
 
 
-def convert_gif(input: str):
+def convert_gif(input: str, user_id: int):
     """Funtion to convert mp4 to webm(vp9)"""
 
     vid = cv2.VideoCapture(input)
@@ -170,7 +170,7 @@ def convert_gif(input: str):
         width = 512
         height = 512
 
-    converted_name = f"kangsticker.webm"
+    converted_name = f"kangsticker_{user_id}.webm"
 
     (
         ffmpeg.input(input)

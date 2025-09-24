@@ -6,7 +6,7 @@ cachetools==6.1.0
 certifi==2025.7.14
 charset-normalizer==3.4.3
 cloudscraper==1.2.71
-ffmpeg==1.4
+ffmpeg-python==0.2.0
 future==1.0.0
 greenlet==3.2.3
 h11==0.16.0
