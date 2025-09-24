@@ -4,6 +4,9 @@ import importlib
 import random
 import re
 import time
+import traceback
+import html
+import json
 from typing import Optional
 
 from telegram import Chat, InlineKeyboardButton, InlineKeyboardMarkup, Update, User
@@ -19,7 +22,7 @@ from telegram.ext import (
     Application
 )
 from telegram.helpers import escape_markdown
-from telegram.error import BadRequest, Forbidden
+from telegram.error import BadRequest, Forbidden, TelegramError, TimedOut, ChatMigrated, NetworkError
 
 
 from zerotwo import (
@@ -379,8 +382,38 @@ async def migrate_chats(update: Update, _: ContextTypes.DEFAULT_TYPE):
 
 
 async def error_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    LOGGER.exception("Error in handler:", exc_info=context.error)
+    error = context.error
+    try:
+        raise error
+    except Forbidden:
+        LOGGER.error("\nForbidden Erro\n")
+        LOGGER.error(error)
+        raise error
+        # remove update.message.chat_id from conversation list
+    except BadRequest:
+        LOGGER.error("\nBadRequest Error\n")
+        LOGGER.error("BadRequest caught")
+        LOGGER.error(error)
+        raise error
 
+        # handle malformed requests - read more below!
+    except TimedOut:
+        LOGGER.error("\nTimedOut Error\n")
+        raise error
+        # handle slow connection problems
+    except NetworkError:
+        LOGGER.error("\n NetWork Error\n")
+        raise error
+        # handle other connection problems
+    except ChatMigrated as err:
+        LOGGER.error("\n ChatMigrated error\n")
+        raise error
+        LOGGER.error(err)
+        # the chat_id of a group has changed, use e.new_chat_id instead
+    except TelegramError:
+        LOGGER.error(error)
+        raise # then only it sends the message to the owner
+        # handle all other telegram related errors
 
 async def post_init(application: Application):
 
