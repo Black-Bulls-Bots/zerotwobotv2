@@ -31,7 +31,7 @@ async def get_user_id(username: str) -> Union[int, None]:
     if username.startswith("@"):
         username = username[1:]
 
-    users = sql.get_userid_by_name(username)
+    users = await sql.get_userid_by_name(username)
 
     if not users:
         return None
@@ -126,19 +126,19 @@ async def log_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 @check_admin(only_owner=True)
 async def chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
     all_chats = await sql.get_all_chats() or []
-    chatfile = "List of chats.\n0. Chat name | Chat ID | Members count\n"
+    chatfile = "List of chats.\n Chat name | Chat ID | Members count | Bot Admin?\n"
     P = 1
     for chat in all_chats:
         try:
             curr_chat = await context.bot.getChat(chat.chat_id)
             bot_member = await curr_chat.get_member(context.bot.id)
-            chat_members = await curr_chat.get_member_count(context.bot.id)
-            chatfile += "{}. {} | {} | {}\n".format(
-                P, chat.chat_name, chat.chat_id, chat_members,
+            chat_members = await curr_chat.get_member_count()
+            chatfile += "{}. {} | {} | {} | {}\n".format(
+                P, chat.chat_name, chat.chat_id, chat_members, bot_member.ADMINISTRATOR
             )
             P = P + 1
         except:
-            pass
+            raise
 
     with BytesIO(str.encode(chatfile)) as output:
         output.name = "groups_list.txt"
