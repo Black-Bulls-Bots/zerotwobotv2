@@ -15,7 +15,7 @@ from telegram.helpers import escape_markdown
 # from zerotwobot.modules.sql.topics_sql import get_action_topic
 
 import zerotwo.sql.users as sql
-from zerotwo import LOGGER, OWNER_ID, application
+from zerotwo import LOGGER, application
 from zerotwo.helpers.chat_status import check_admin
 from zerotwo.sql.users import get_all_users
 
@@ -137,8 +137,9 @@ async def chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 P, chat.chat_name, chat.chat_id, chat_members, bot_member.ADMINISTRATOR
             )
             P = P + 1
-        except:
-            raise
+        except Exception as e:
+            LOGGER.warning(f"[Groups]: {e}")
+            continue
 
     with BytesIO(str.encode(chatfile)) as output:
         output.name = "groups_list.txt"
